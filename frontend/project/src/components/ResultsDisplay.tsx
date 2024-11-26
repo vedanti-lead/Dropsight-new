@@ -1,5 +1,6 @@
 import React from 'react';
-import { BarChart, TrendingUp, IndianRupee, Star, ShoppingCart } from 'lucide-react';
+import { BarChart as BarChartIcon, TrendingUp, IndianRupee, Star, ShoppingCart } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import type { Product } from '../types';
 
 interface ResultsDisplayProps {
@@ -9,6 +10,30 @@ interface ResultsDisplayProps {
 }
 
 export function ResultsDisplay({ probability, similarProducts, selectedProduct }: ResultsDisplayProps) {
+  // Define colors for each product
+  const productColors = {
+    myProduct: '#ef4444', // Red
+    productA: '#3b82f6',  // Blue
+    productB: '#10b981',  // Green
+    productC: '#f59e0b'   // Orange
+  };
+
+  // Prepare data for the probability comparison chart
+  const probabilityChartData = [
+    {
+      name: 'My Product',
+      displayName: selectedProduct.key,
+      probability: probability * 100,
+      color: productColors.myProduct
+    },
+    ...similarProducts.map((product, index) => ({
+      name: `Product ${String.fromCharCode(65 + index)}`, // A, B, C
+      displayName: product.key,
+      probability: (product.probability || 0) * 100,
+      color: productColors[`product${String.fromCharCode(65 + index)}` as keyof typeof productColors]
+    }))
+  ];
+
   return (
     <div className="space-y-8">
       {/* Probability Display */}
@@ -53,11 +78,58 @@ export function ResultsDisplay({ probability, similarProducts, selectedProduct }
         </div>
       </div>
 
+      {/* Probability Comparison Chart */}
+      <div className="bg-gray-800/50 rounded-lg p-6 border border-red-500/20">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-200">Success Probability Comparison</h3>
+          <BarChartIcon className="text-red-500 w-6 h-6" />
+        </div>
+        <div className="h-[400px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={probabilityChartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="name" 
+                stroke="#9ca3af"
+                angle={0}
+                interval={0}
+              />
+              <YAxis 
+                stroke="#9ca3af"
+                domain={[0, 100]}
+                tickFormatter={(value) => `${value}%`}
+              />
+              <Tooltip 
+                formatter={(value: number, name: string, props: any) => [
+                  `${value.toFixed(1)}%`,
+                  `Success Probability (${props.payload.displayName})`
+                ]}
+                contentStyle={{ 
+                  backgroundColor: '#1f2937',
+                  border: '1px solid #374151',
+                  borderRadius: '0.375rem',
+                  color: '#e5e7eb'
+                }}
+              />
+              <Bar 
+                dataKey="probability" 
+                fill="#ef4444"
+                radius={[4, 4, 0, 0]}
+              >
+                {probabilityChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Similar Products */}
       <div className="bg-gray-800/50 rounded-lg p-6 border border-red-500/20">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-gray-200">Similar Products</h3>
-          <BarChart className="text-red-500 w-6 h-6" />
+          <BarChartIcon className="text-red-500 w-6 h-6" />
         </div>
         <div className="space-y-4">
           {similarProducts.map((product, index) => (
@@ -66,7 +138,9 @@ export function ResultsDisplay({ probability, similarProducts, selectedProduct }
               className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg"
             >
               <div>
-                <h4 className="text-gray-200 font-medium">{product.key}</h4>
+                <h4 className="text-gray-200 font-medium">
+                  Product {String.fromCharCode(65 + index)} ({product.key})
+                </h4>
                 <p className="text-sm text-gray-400">
                   ₹{product.price.toFixed(2)} • {product.reviews} reviews
                 </p>
